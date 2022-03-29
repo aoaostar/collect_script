@@ -8,8 +8,6 @@
 import asyncio
 import json
 import os
-import re
-import sys
 
 import aiohttp
 
@@ -31,7 +29,7 @@ async def get_novel_chapters(url):
         for item in soup_select:
             chapters.append({
                 "url": parse.urljoin(url, item.get('href')),
-                "title": item.string,
+                "title": item.string.strip(),
             })
         return chapters
 
@@ -39,14 +37,13 @@ async def get_novel_chapters(url):
 async def collect_contents(data):
     contents = []
     async with http_get(data["url"]) as r:
-        res = await r.text()
+        res = await r.text(errors='ignore')
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(res, "html.parser")
         find = soup.find("div", id='content')
         for p in find.contents:
             if p.string:
                 contents.append(p.string)
-
     return "\n".join(contents)
 
 
@@ -84,7 +81,6 @@ def load_json(path):
 async def main():
     chapters = await get_novel_chapters(NOVEL_URL)
     print(f"开始采集，共计{len(chapters)}章")
-
     tasks = []
     semaphore = asyncio.Semaphore(MAX_WORKERS)
     from tqdm.asyncio import tqdm
@@ -93,16 +89,17 @@ async def main():
         tasks.append(asyncio.create_task(semap(semaphore, collect_contents, chapter,
                                                lambda x: pbar.update(1) and pbar.set_description(x["title"]))))
     await asyncio.wait(tasks)
-    pbar.close()
     chapter_contents = NOVEL_TITLE + "\n\n"
     for k in range(len(tasks)):
-        chapter_contents += chapters[k]['title'] +  tasks[k].result()
+        chapter_contents += "\n" + chapters[k]['title'].strip() + "\n" + tasks[k].result().strip()
     save(OUPUT, NOVEL_TITLE, chapter_contents.strip("\n"))
+    pbar.close()
     print(f"[{NOVEL_TITLE}]采集完毕，共{len(chapters)}章")
 
+
 OUPUT = "./output"
-NOVEL_URL = "https://www.58160.com/book/5545.html"
-NOVEL_TITLE = "娱乐圈第一软饭王"
+NOVEL_URL = "http://www.42biquge.com/book/34095/"
+NOVEL_TITLE = "顶级财阀"
 DATA_PATH = "./"
 # 并行数
 MAX_WORKERS = 10

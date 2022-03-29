@@ -1,0 +1,10 @@
+{
+  "name": "minimalist_wallpaper_collection_tool",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
