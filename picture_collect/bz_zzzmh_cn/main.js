@@ -155,7 +155,7 @@ function print() {
     }
     message = message.join(' ')
     console.log(message)
-    fs.appendFileSync(path.join(__dirname) + '/aoaostar.log', `[${dateFormat}]${message}\n`)
+    fs.appendFileSync(path.join(__dirname) + '/aoaostar.log', `[${dateFormat(new Date())}]${message}\n`)
 }
 
 function print_info() {

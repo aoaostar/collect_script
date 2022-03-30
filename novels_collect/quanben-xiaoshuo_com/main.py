@@ -8,8 +8,6 @@
 import asyncio
 import json
 import os
-import re
-import sys
 
 import aiohttp
 
@@ -110,7 +108,7 @@ DATA_PATH = "./"
 # 并行数
 MAX_WORKERS = 10
 # http代理
-PROXY = 'http://127.0.0.1:7890'
+PROXY = ''
 
 loop = asyncio.get_event_loop()
 
