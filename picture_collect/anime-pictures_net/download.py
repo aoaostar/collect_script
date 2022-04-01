@@ -16,12 +16,12 @@ if __name__ != '__main__':
 
 def load_json(path):
     if not os.path.exists(path):
-        return {}
+        return []
     with open(path, "r", encoding="utf-8") as f:
         try:
             return json.load(f)
         except:
-            return {}
+            return []
 
 
 def http_get(url, params=None):
@@ -30,7 +30,7 @@ def http_get(url, params=None):
     return aiohttp.request("GET", url, params=params, proxy=PROXY, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/96.0.4664.110 Safari/537.36",
-    })
+    }, timeout=aiohttp.ClientTimeout(total=10))
 
 
 def save(output, filename, contents, extension='.json'):
@@ -93,7 +93,8 @@ async def page_down(image_dict, page):
                   },
                   lambda x: pbar.update(1) and pbar.set_description(
                       f"ANIME-PICTURES下载 第{x['page']}页 第{x['index'] + 1}张"))))
-    await asyncio.wait(tasks)
+    if len(tasks) > 0:
+        await asyncio.wait(tasks)
 
 
 async def main():
@@ -113,7 +114,11 @@ async def main():
 # 并行数
 MAX_WORKERS = 10
 # 需要下载的页
-NEED_DOWNLOAD_PAGES = os.listdir('./data')
+listdir = os.listdir('./data')
+listdir.sort(key=lambda x: int(x[5:-5]))
+
+NEED_DOWNLOAD_PAGES = listdir
+
 # http代理
 PROXY = ''
 loop = asyncio.get_event_loop()

@@ -31,3 +31,15 @@ if __name__ == '__main__':
             empty_list.append(re.findall('\d+', dir)[0])
     print(f"扫描完毕，共{len(empty_list)}页为空")
     print(empty_list)
+
+if __name__ == '__main__':
+    print("正在扫描遗漏的")
+    path = './data'
+    listdir = os.listdir(path)
+    empty_list = []
+    for i in range(0,7004):
+        if not f"page_{i}.json" in listdir:
+            empty_list.append(i)
+
+    print(f"扫描完毕，共{len(empty_list)}页未采集")
+    print(json.dumps(empty_list))

@@ -21,7 +21,7 @@ def http_get(url, params=None):
     return aiohttp.request("GET", url, params=params, proxy=PROXY, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/96.0.4664.110 Safari/537.36",
-    })
+    }, timeout=aiohttp.ClientTimeout(total=10))
 
 
 def save(output, filename, contents, extension='.json'):
@@ -87,7 +87,7 @@ async def main():
 MAX_WORKERS = 10
 # http代理
 PROXY = ''
-PAGES = range(0, 7002 + 1)
+PAGES = range(0, 7003 + 1)
 loop = asyncio.get_event_loop()
 
 loop.run_until_complete(main())
