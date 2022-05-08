@@ -27,10 +27,11 @@ def load_json(path):
 def http_get(url, params=None):
     if params is None:
         params = {}
-    return aiohttp.request("GET", url, params=params, proxy=PROXY, headers={
+    url = PROXY + url
+    return aiohttp.request("GET", url, params=params, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/96.0.4664.110 Safari/537.36",
-    }, timeout=aiohttp.ClientTimeout(total=10))
+    }, timeout=aiohttp.ClientTimeout(total=TIMEOUT))
 
 
 def save(output, filename, contents, extension='.json'):
@@ -64,16 +65,31 @@ async def semap(sem, func, data, callback=None):
 
 async def download(data):
     filename = data['item']['id'].replace('/', '_')
-    async with http_get(f"https://images.anime-pictures.net/{data['item']['id']}{data['item']['extension']}") as r:
-        if r.status != 200:
-            extension = ".jpeg"
-            if data['item']['extension'] == ".jpeg":
-                extension = ".jpg"
-            async with http_get(f"https://images.anime-pictures.net/{data['item']['id']}{extension}") as r2:
-                save_file(f"./images/{data['page']}", filename, await r2.read(), data['item']['extension'])
-        else:
-            save_file(f"./images/{data['page']}", filename, await r.read(), data['item']['extension'])
-    return True
+    extensions_list = [data['item']['extension'], ".jpg", ".jpeg", ".png", ".gif"]
+    for x in extensions_list.copy():
+        extensions_list.append(x.upper())
+    extensions = sorted(set(extensions_list), key=extensions_list.index)
+    flag = False
+    for extension in extensions:
+        if flag:
+            break
+        filepath = f"./images/{data['page']}/{filename}{extension}"
+        if os.path.exists(filepath) and os.path.getsize(filepath) > 10240:
+            break
+        for i in range(3):
+            try:
+                async with http_get(
+                        f"https://images.anime-pictures.net/{data['item']['id']}{extension}") as r:
+                    if r.status != 200:
+                        if os.path.exists(filepath):
+                            os.unlink(filepath)
+                        break
+                    save_file(f"./images/{data['page']}", filename, await r.read(), extension)
+                    flag = True
+                    break
+            except Exception as e:
+                print(f"[{filename}{extension}]下载异常：{e}")
+                continue
 
 
 async def page_down(image_dict, page):
@@ -101,9 +117,9 @@ async def main():
     print(f"给老子冲~ 共计{len(NEED_DOWNLOAD_PAGES)}页")
     images_count = 0
     for dir in NEED_DOWNLOAD_PAGES:
-        data = load_json('./data/' + dir)
+        data = load_json(DATA_PATH + "/" + dir)
         page = dir[:-len(".json")]
-        print(f"正在采集第{page}页 共{len(data)}张图片")
+        print(f"正在下载第{page}页 共{len(data)}张图片")
         await page_down(data, page)
         print(f"第{page}页下载完毕")
         images_count += len(data)
@@ -112,15 +128,23 @@ async def main():
 
 
 # 并行数
-MAX_WORKERS = 10
+MAX_WORKERS = 15
 # 需要下载的页
-listdir = os.listdir('./data')
+DATA_PATH = './scan'
+# DATA_PATH = './data'
+listdir = os.listdir(DATA_PATH)
 listdir.sort(key=lambda x: int(x[5:-5]))
 
 NEED_DOWNLOAD_PAGES = listdir
+# NEED_DOWNLOAD_PAGES = listdir[1400:4001]
+# NEED_DOWNLOAD_PAGES = listdir[4001:5001]
+# NEED_DOWNLOAD_PAGES = listdir[5001:]
+
 
 # http代理
 PROXY = ''
+# 超时时间
+TIMEOUT = 120
 loop = asyncio.get_event_loop()
+
 loop.run_until_complete(main())
-loop.close()
